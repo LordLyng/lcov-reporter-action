@@ -53,7 +53,7 @@ async function main() {
 		status: 'completed',
 		output: {
 			title: `${name} ${icon}`,
-			body,
+			summary: body,
 		},
 		...context.repo
 	})

@@ -23017,7 +23017,7 @@ async function main$1() {
 		status: 'completed',
 		output: {
 			title: `${name} ${icon}`,
-			body,
+			summary: body,
 		},
 		...github_1.repo
 	});
