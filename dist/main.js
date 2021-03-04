@@ -22774,8 +22774,6 @@ function tag(name) {
 		return `<${name}${props}>${c.join("")}</${name}>`
 	}
 }
-
-const details = tag("details");
 const summary = tag("summary");
 const tr = tag("tr");
 const td = tag("td");
@@ -22929,14 +22927,15 @@ function ranges(linenos) {
 	return res
 }
 
-function comment (lcov, options) {
+function comment(lcov, options) {
 	return fragment(
 		options.base
 			? `Coverage after merging ${b(options.head)} into ${b(options.base)}`
 			: `Coverage for this commit`,
 		table(tbody(tr(th(percentage(lcov).toFixed(2), "%")))),
 		"\n\n",
-		details(summary("Coverage Report"), tabulate(lcov, options)),
+		summary("Coverage Report"),
+		tabulate(lcov, options),
 	)
 }
 
@@ -22965,7 +22964,8 @@ function diff(lcov, before, options) {
 			th(arrow, " ", plus, pdiff.toFixed(2), "%"),
 		))),
 		"\n\n",
-		details(summary("Coverage Report"), tabulate(lcov, options)),
+		summary("Coverage Report"),
+		tabulate(lcov, options),
 	)
 }
 
