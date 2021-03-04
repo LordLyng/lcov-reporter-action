@@ -38,7 +38,6 @@ async function main() {
 	}
 
 	const [sha, runId] = getCheckRunContext();
-	const octoKit = GitHub.getOctokit(token);
 
 	const lcov = await parse(raw)
 	const baselcov = baseRaw && await parse(baseRaw)
@@ -47,7 +46,7 @@ async function main() {
 	const conclusion = isFailed ? 'failure' : 'success';
 	const icon = isFailed ? '❌' : '✔️';
 
-	await octoKit.checks.create({
+	await new Github(token).checks.create({
 		head_sha: sha,
 		name,
 		conclusion,
