@@ -23001,7 +23001,7 @@ async function main$1() {
 		options.head = github_1.ref;
 	}
 
-	const [sha, runId] = getCheckRunContext();
+	const sha = getCheckRunContext().sha;
 
 	const lcov = await parse$2(raw);
 	const baselcov = baseRaw && await parse$2(baseRaw);

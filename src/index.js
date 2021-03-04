@@ -37,7 +37,7 @@ async function main() {
 		options.head = context.ref
 	}
 
-	const [sha, runId] = getCheckRunContext();
+	const sha = getCheckRunContext().sha;
 
 	const lcov = await parse(raw)
 	const baselcov = baseRaw && await parse(baseRaw)
