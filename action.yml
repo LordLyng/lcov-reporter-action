@@ -17,6 +17,9 @@ inputs:
   minimum-coverage-percentage:
     description: indicates a value for wat coverage percentage will be required for the check to pass
     required: false
+  name:
+    description: Name of the check run
+    required: true
 runs:
   using: node12
   main: dist/main.js
