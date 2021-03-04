@@ -2,10 +2,11 @@
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
+var fs = require('fs');
+var fs__default = _interopDefault(fs);
 var os = _interopDefault(require('os'));
 var path = _interopDefault(require('path'));
 var child_process = _interopDefault(require('child_process'));
-var fs$1 = _interopDefault(require('fs'));
 var Stream = _interopDefault(require('stream'));
 var assert = _interopDefault(require('assert'));
 var events = _interopDefault(require('events'));
@@ -439,13 +440,13 @@ function checkStat (stat, path, options) {
 }
 
 function isexe (path, options, cb) {
-  fs$1.stat(path, function (er, stat) {
+  fs__default.stat(path, function (er, stat) {
     cb(er, er ? false : checkStat(stat, path, options));
   });
 }
 
 function sync (path, options) {
-  return checkStat(fs$1.statSync(path), path, options)
+  return checkStat(fs__default.statSync(path), path, options)
 }
 
 var mode = isexe$1;
@@ -454,13 +455,13 @@ isexe$1.sync = sync$1;
 
 
 function isexe$1 (path, options, cb) {
-  fs$1.stat(path, function (er, stat) {
+  fs__default.stat(path, function (er, stat) {
     cb(er, er ? false : checkStat$1(stat, options));
   });
 }
 
 function sync$1 (path, options) {
-  return checkStat$1(fs$1.statSync(path), options)
+  return checkStat$1(fs__default.statSync(path), options)
 }
 
 function checkStat$1 (stat, options) {
@@ -825,9 +826,9 @@ function readShebang(command) {
     let fd;
 
     try {
-        fd = fs$1.openSync(command, 'r');
-        fs$1.readSync(fd, buffer, 0, size, 0);
-        fs$1.closeSync(fd);
+        fd = fs__default.openSync(command, 'r');
+        fs__default.readSync(fd, buffer, 0, size, 0);
+        fs__default.closeSync(fd);
     } catch (e) { /* Empty */ }
 
     // Attempt to extract shebang (null is returned if not a shebang)
@@ -2836,8 +2837,8 @@ var isFn = function (fn) {
 
 var isFS = function (stream) {
   if (!ancient) return false // newer node version do not need to care about fs is a special way
-  if (!fs$1) return false // browser
-  return (stream instanceof (fs$1.ReadStream || noop$1) || stream instanceof (fs$1.WriteStream || noop$1)) && isFn(stream.close)
+  if (!fs__default) return false // browser
+  return (stream instanceof (fs__default.ReadStream || noop$1) || stream instanceof (fs__default.WriteStream || noop$1)) && isFn(stream.close)
 };
 
 var isRequest$1 = function (stream) {
@@ -22533,8 +22534,8 @@ class Context {
     constructor() {
         this.payload = {};
         if (process.env.GITHUB_EVENT_PATH) {
-            if (fs$1.existsSync(process.env.GITHUB_EVENT_PATH)) {
-                this.payload = JSON.parse(fs$1.readFileSync(process.env.GITHUB_EVENT_PATH, { encoding: 'utf8' }));
+            if (fs__default.existsSync(process.env.GITHUB_EVENT_PATH)) {
+                this.payload = JSON.parse(fs__default.readFileSync(process.env.GITHUB_EVENT_PATH, { encoding: 'utf8' }));
             }
             else {
                 process.stdout.write(`GITHUB_EVENT_PATH ${process.env.GITHUB_EVENT_PATH} does not exist${os.EOL}`);
@@ -22603,17 +22604,9 @@ exports.GitHub = GitHub;
 
 });
 
-var github$1 = unwrapExports(github);
+unwrapExports(github);
 var github_1 = github.context;
 var github_2 = github.GitHub;
-
-var github$2 = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	'default': github$1,
-	__moduleExports: github,
-	context: github_1,
-	GitHub: github_2
-});
 
 /*
 Copyright (c) 2012, Yahoo! Inc. All rights reserved.
@@ -22624,7 +22617,7 @@ http://yuilibrary.com/license/
 
 
 /* istanbul ignore next */
-var exists = fs$1.exists || path.exists;
+var exists = fs__default.exists || path.exists;
 
 var walkFile = function(str, cb) {
     var data = [], item;
@@ -22730,7 +22723,7 @@ var parse$1 = function(file, cb) {
         if (!x) {
             return walkFile(file, cb);
         }
-        fs$1.readFile(file, 'utf8', function(err, str) {
+        fs__default.readFile(file, 'utf8', function(err, str) {
             walkFile(str, cb);
         });
     });
@@ -22982,32 +22975,30 @@ async function main$1() {
 	const token = core$1.getInput("github-token");
 	const lcovFile = core$1.getInput("lcov-file") || "./coverage/lcov.info";
 	const baseFile = core$1.getInput("lcov-base");
-	const context = github_1;
-	const octoKit = undefined(token);
 
-	const raw = await fs.readFile(lcovFile, "utf-8").catch(err => null);
+	const raw = await fs.promises.readFile(lcovFile, "utf-8").catch(err => null);
 	if (!raw) {
 		console.log(`No coverage report found at '${lcovFile}', exiting...`);
 		return
 	}
 
-	const baseRaw = baseFile && await fs.readFile(baseFile, "utf-8").catch(err => null);
+	const baseRaw = baseFile && await fs.promises.readFile(baseFile, "utf-8").catch(err => null);
 	if (baseFile && !baseRaw) {
 		console.log(`No coverage report found at '${baseFile}', ignoring...`);
 	}
 
 	const options = {
-		repository: context.payload.repository.full_name,
+		repository: github_1.payload.repository.full_name,
 		prefix: `${process.env.GITHUB_WORKSPACE}/`,
 	};
 
-	if (context.eventName === "pull_request") {
-		options.commit = context.payload.pull_request.head.sha;
-		options.head = context.payload.pull_request.head.ref;
-		options.base = context.payload.pull_request.base.ref;
-	} else if (context.eventName === "push") {
-		options.commit = context.payload.after;
-		options.head = context.ref;
+	if (github_1.eventName === "pull_request") {
+		options.commit = github_1.payload.pull_request.head.sha;
+		options.head = github_1.payload.pull_request.head.ref;
+		options.base = github_1.payload.pull_request.base.ref;
+	} else if (github_1.eventName === "push") {
+		options.commit = github_1.payload.after;
+		options.head = github_1.ref;
 	}
 
 	const [sha, runId] = getCheckRunContext();
@@ -23019,7 +23010,7 @@ async function main$1() {
 	const conclusion = isFailed ? 'failure' : 'success';
 	const icon = isFailed ? '❌' : '✔️';
 
-	await octoKit.checks.create({
+	await new github_2(token).checks.create({
 		head_sha: sha,
 		name,
 		conclusion,
@@ -23028,7 +23019,7 @@ async function main$1() {
 			title: `${name} ${icon}`,
 			body,
 		},
-		...context.repo
+		...github_1.repo
 	});
 }
 

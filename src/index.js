@@ -1,5 +1,6 @@
+import { promises as fs } from "fs"
 import core from "@actions/core"
-import * as github from "@actions/github";
+import { context, GitHub } from "@actions/github";
 
 import { parse, percentage } from "./lcov"
 import { diff } from "./comment"
@@ -10,8 +11,6 @@ async function main() {
 	const token = core.getInput("github-token")
 	const lcovFile = core.getInput("lcov-file") || "./coverage/lcov.info"
 	const baseFile = core.getInput("lcov-base")
-	const context = github.context;
-	const octoKit = github.getOctokit(token);
 
 	const raw = await fs.readFile(lcovFile, "utf-8").catch(err => null)
 	if (!raw) {
@@ -47,7 +46,7 @@ async function main() {
 	const conclusion = isFailed ? 'failure' : 'success';
 	const icon = isFailed ? '❌' : '✔️';
 
-	await octoKit.checks.create({
+	await new GitHub(token).checks.create({
 		head_sha: sha,
 		name,
 		conclusion,
@@ -66,9 +65,9 @@ main().catch(function (err) {
 })
 
 function getCheckRunContext() {
-	if (github.context.eventName === 'workflow_run') {
+	if (context.eventName === 'workflow_run') {
 		core.info('Action was triggered by workflow_run: using SHA and RUN_ID from triggering workflow')
-		const event = github.context.payload
+		const event = context.payload
 		if (!event.workflow_run) {
 			throw new Error("Event of type 'workflow_run' is missing 'workflow_run' field")
 		}
@@ -81,13 +80,13 @@ function getCheckRunContext() {
 		}
 	}
 
-	const runId = github.context.runId
-	if (github.context.payload.pull_request) {
-		core.info(`Action was triggered by ${github.context.eventName}: using SHA from head of source branch`)
-		const pr = github.context.payload.pull_request
+	const runId = context.runId
+	if (context.payload.pull_request) {
+		core.info(`Action was triggered by ${context.eventName}: using SHA from head of source branch`)
+		const pr = context.payload.pull_request
 		return { sha: pr.head.sha, runId }
 	}
 
-	return { sha: github.context.sha, runId }
+	return { sha: context.sha, runId }
 }
 
