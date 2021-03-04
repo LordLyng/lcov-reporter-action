@@ -1,6 +1,5 @@
-import { promises as fs } from "fs"
 import core from "@actions/core"
-import { GitHub, context } from "@actions/github"
+import * as github from "@actions/github";
 
 import { parse, percentage } from "./lcov"
 import { diff } from "./comment"
@@ -11,6 +10,8 @@ async function main() {
 	const token = core.getInput("github-token")
 	const lcovFile = core.getInput("lcov-file") || "./coverage/lcov.info"
 	const baseFile = core.getInput("lcov-base")
+	const context = github.context;
+	const octoKit = github.getOctokit(token);
 
 	const raw = await fs.readFile(lcovFile, "utf-8").catch(err => null)
 	if (!raw) {
@@ -46,7 +47,7 @@ async function main() {
 	const conclusion = isFailed ? 'failure' : 'success';
 	const icon = isFailed ? '❌' : '✔️';
 
-	await new Github(token).checks.create({
+	await octoKit.checks.create({
 		head_sha: sha,
 		name,
 		conclusion,
