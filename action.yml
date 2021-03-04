@@ -1,6 +1,6 @@
 name: Code Coverage Report
-description: Comments a pull request with the code coverage
-author: Romeo Van Snick
+description: Insert a runner check containing coverage report
+author: LordLyng
 branding:
   icon: check-square
   color: green

@@ -1,10 +1,10 @@
 {
 	"name": "lcov-reporter-action",
 	"version": "0.2.19",
-	"description": "Comments a pull request with the lcov code coverage",
+	"description": "Insert a runner check containing coverage report",
 	"license": "MIT",
-	"author": "Romeo Van Snick",
-	"repository": "https://github.com/romeovs/lcov-reporter-action",
+	"author": "LordLyng",
+	"repository": "https://github.com/LordLyng/lcov-reporter-action",
 	"keywords": [
 		"actions",
 		"pull-request",

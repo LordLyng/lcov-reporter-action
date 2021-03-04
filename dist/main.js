@@ -22573,7 +22573,7 @@ exports.Context = Context;
 unwrapExports(context);
 var context_1 = context.Context;
 
-var github = createCommonjsModule(function (module, exports) {
+var github$1 = createCommonjsModule(function (module, exports) {
 var __importDefault = (commonjsGlobal && commonjsGlobal.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -22604,9 +22604,9 @@ exports.GitHub = GitHub;
 
 });
 
-unwrapExports(github);
-var github_1 = github.context;
-var github_2 = github.GitHub;
+unwrapExports(github$1);
+var github_1 = github$1.context;
+var github_2 = github$1.GitHub;
 
 /*
 Copyright (c) 2012, Yahoo! Inc. All rights reserved.
@@ -22970,6 +22970,8 @@ function diff(lcov, before, options) {
 }
 
 async function main$1() {
+	const name = core$1.getInput("name", { required: true });
+	const minCoveragePercentage = core$1.getInput("minimum-coverage-percentage") || 0;
 	const token = core$1.getInput("github-token");
 	const lcovFile = core$1.getInput("lcov-file") || "./coverage/lcov.info";
 	const baseFile = core$1.getInput("lcov-base");
@@ -22999,28 +23001,56 @@ async function main$1() {
 		options.head = github_1.ref;
 	}
 
+	const [sha, runId] = getCheckRunContext();
+	const octoKit = github_2.getOctokit(token);
+
 	const lcov = await parse$2(raw);
 	const baselcov = baseRaw && await parse$2(baseRaw);
 	const body = diff(lcov, baselcov, options);
+	const isFailed = minCoveragePercentage != 0 && percentage(lcov) < minCoveragePercentage;
+	const conclusion = isFailed ? 'failure' : 'success';
+	const icon = isFailed ? '❌' : '✔️';
 
-	if (github_1.eventName === "pull_request") {
-		await new github_2(token).issues.createComment({
-			repo: github_1.repo.repo,
-			owner: github_1.repo.owner,
-			issue_number: github_1.payload.pull_request.number,
-			body: diff(lcov, baselcov, options),
-		});
-	} else if (github_1.eventName === "push") {
-		await new github_2(token).repos.createCommitComment({
-			repo: github_1.repo.repo,
-			owner: github_1.repo.owner,
-			commit_sha: options.commit,
-			body: diff(lcov, baselcov, options),
-		});
-	}
+	await octoKit.checks.create({
+		head_sha: sha,
+		name,
+		conclusion,
+		status: 'completed',
+		output: {
+			title: `${name} ${icon}`,
+			body,
+		},
+		...github_1.repo
+	});
 }
 
-main$1().catch(function(err) {
+main$1().catch(function (err) {
 	console.log(err);
 	core$1.setFailed(err.message);
 });
+
+function getCheckRunContext() {
+	if (github.context.eventName === 'workflow_run') {
+		core$1.info('Action was triggered by workflow_run: using SHA and RUN_ID from triggering workflow');
+		const event = github.context.payload;
+		if (!event.workflow_run) {
+			throw new Error("Event of type 'workflow_run' is missing 'workflow_run' field")
+		}
+		if (event.workflow_run.conclusion === 'cancelled') {
+			throw new Error(`Workflow run ${event.workflow_run.id} has been cancelled`)
+		}
+		return {
+			sha: event.workflow_run.head_commit.id,
+			runId: event.workflow_run.id
+		}
+	}
+
+	const runId = github.context.runId;
+	if (github.context.payload.pull_request) {
+		core$1.info(`Action was triggered by ${github.context.eventName}: using SHA from head of source branch`);
+		const pr = github.context.payload.pull_request;
+		return { sha: pr.head.sha, runId }
+	}
+
+	return { sha: github.context.sha, runId }
+}

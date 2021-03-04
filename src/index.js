@@ -2,10 +2,12 @@ import { promises as fs } from "fs"
 import core from "@actions/core"
 import { GitHub, context } from "@actions/github"
 
-import { parse } from "./lcov"
+import { parse, percentage } from "./lcov"
 import { diff } from "./comment"
 
 async function main() {
+	const name = core.getInput("name", { required: true })
+	const minCoveragePercentage = core.getInput("minimum-coverage-percentage") || 0;
 	const token = core.getInput("github-token")
 	const lcovFile = core.getInput("lcov-file") || "./coverage/lcov.info"
 	const baseFile = core.getInput("lcov-base")
@@ -35,28 +37,57 @@ async function main() {
 		options.head = context.ref
 	}
 
+	const [sha, runId] = getCheckRunContext();
+	const octoKit = GitHub.getOctokit(token);
+
 	const lcov = await parse(raw)
 	const baselcov = baseRaw && await parse(baseRaw)
 	const body = diff(lcov, baselcov, options)
+	const isFailed = minCoveragePercentage != 0 && percentage(lcov) < minCoveragePercentage;
+	const conclusion = isFailed ? 'failure' : 'success';
+	const icon = isFailed ? '❌' : '✔️';
 
-	if (context.eventName === "pull_request") {
-		await new GitHub(token).issues.createComment({
-			repo: context.repo.repo,
-			owner: context.repo.owner,
-			issue_number: context.payload.pull_request.number,
-			body: diff(lcov, baselcov, options),
-		})
-	} else if (context.eventName === "push") {
-		await new GitHub(token).repos.createCommitComment({
-			repo: context.repo.repo,
-			owner: context.repo.owner,
-			commit_sha: options.commit,
-			body: diff(lcov, baselcov, options),
-		})
-	}
+	await octoKit.checks.create({
+		head_sha: sha,
+		name,
+		conclusion,
+		status: 'completed',
+		output: {
+			title: `${name} ${icon}`,
+			body,
+		},
+		...context.repo
+	})
 }
 
-main().catch(function(err) {
+main().catch(function (err) {
 	console.log(err)
 	core.setFailed(err.message)
 })
+
+function getCheckRunContext() {
+	if (github.context.eventName === 'workflow_run') {
+		core.info('Action was triggered by workflow_run: using SHA and RUN_ID from triggering workflow')
+		const event = github.context.payload
+		if (!event.workflow_run) {
+			throw new Error("Event of type 'workflow_run' is missing 'workflow_run' field")
+		}
+		if (event.workflow_run.conclusion === 'cancelled') {
+			throw new Error(`Workflow run ${event.workflow_run.id} has been cancelled`)
+		}
+		return {
+			sha: event.workflow_run.head_commit.id,
+			runId: event.workflow_run.id
+		}
+	}
+
+	const runId = github.context.runId
+	if (github.context.payload.pull_request) {
+		core.info(`Action was triggered by ${github.context.eventName}: using SHA from head of source branch`)
+		const pr = github.context.payload.pull_request
+		return { sha: pr.head.sha, runId }
+	}
+
+	return { sha: github.context.sha, runId }
+}
+
